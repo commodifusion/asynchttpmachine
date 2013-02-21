@@ -23,6 +23,7 @@ using System.Diagnostics;
 // - too-long request uri
 // - too-long headers
 // - too-long body (or, will error out on next read)
+using System.Threading.Tasks;
 
 namespace HttpMachine.Tests
 {
@@ -36,7 +37,7 @@ namespace HttpMachine.Tests
         List<ArraySegment<byte>> body;
         bool onHeadersEndCalled, shouldKeepAlive;
 
-        public void OnMessageBegin(HttpParser parser)
+        public async Task OnMessageBegin(HttpParser parser)
         {
             //Console.WriteLine("OnMessageBegin");
             
@@ -48,7 +49,7 @@ namespace HttpMachine.Tests
             body = new List<ArraySegment<byte>>();
         }
 
-        public void OnMessageEnd(HttpParser parser)
+		public async Task OnMessageEnd(HttpParser parser)
         {
             //Console.WriteLine("OnMessageEnd");
 
@@ -92,37 +93,37 @@ namespace HttpMachine.Tests
             onHeadersEndCalled = false;
         }
 
-        public void OnMethod(HttpParser parser, string str)
+		public async Task OnMethod(HttpParser parser, string str)
         {
             //Console.WriteLine("OnMethod: '" + str + "'");
             method = str;
         }
 
-        public void OnRequestUri(HttpParser parser, string str)
+		public async Task OnRequestUri(HttpParser parser, string str)
         {
             //Console.WriteLine("OnRequestUri:  '" + str + "'");
             requestUri = str;
         }
 
-        public void OnPath(HttpParser parser, string str)
+        public async Task OnPath(HttpParser parser, string str)
         {
             //Console.WriteLine("OnPath:  '" + str + "'");
             path = str;
         }
 
-        public void OnQueryString(HttpParser parser, string str)
+		public async Task OnQueryString(HttpParser parser, string str)
         {
             //Console.WriteLine("OnQueryString:  '" + str + "'");
             queryString = str;
         }
 
-        public void OnFragment(HttpParser parser, string str)
+		public async Task OnFragment(HttpParser parser, string str)
         {
             //Console.WriteLine("OnFragment:  '" + str + "'");
             fragment = str;
         }
 
-        public void OnHeaderName(HttpParser parser, string str)
+		public async Task OnHeaderName(HttpParser parser, string str)
         {
             //Console.WriteLine("OnHeaderName:  '" + str + "'");
 
@@ -132,7 +133,7 @@ namespace HttpMachine.Tests
             headerName = str;
         }
 
-        public void OnHeaderValue(HttpParser parser, string str)
+		public async Task OnHeaderValue(HttpParser parser, string str)
         {
             //Console.WriteLine("OnHeaderValue:  '" + str + "'");
 
@@ -142,7 +143,7 @@ namespace HttpMachine.Tests
             headerValue = str;
         }
 
-        public void OnHeadersEnd(HttpParser parser)
+		public async Task OnHeadersEnd(HttpParser parser)
         {
             //Console.WriteLine("OnHeadersEnd");
             onHeadersEndCalled = true;
@@ -162,7 +163,7 @@ namespace HttpMachine.Tests
             headerName = headerValue = null;
         }
 
-        public void OnBody(HttpParser parser, ArraySegment<byte> data)
+		public async Task OnBody(HttpParser parser, ArraySegment<byte> data)
         {
             //var str = Encoding.ASCII.GetString(data.Array, data.Offset, data.Count);
             //Console.WriteLine("OnBody:  '" + str + "'");
@@ -218,7 +219,7 @@ namespace HttpMachine.Tests
         }
 
         [Test]
-        public void SingleChunk()
+        public async Task SingleChunk()
         {
             // read each request as a single block and parse
 
@@ -228,34 +229,34 @@ namespace HttpMachine.Tests
                 var parser = new HttpParser(handler);
                 Console.WriteLine("----- Testing request: '" + request.Name + "' -----");
 
-                var parsed = parser.Execute(new ArraySegment<byte>(request.Raw));
+                var parsed = await parser.Execute(new ArraySegment<byte>(request.Raw));
 
                 if (parsed != request.Raw.Length)
                     Assert.Fail("Error while parsing.");
 
-                parser.Execute(default(ArraySegment<byte>));
+                await parser.Execute(default(ArraySegment<byte>));
 
                 AssertRequest(new TestRequest[] { request }, handler.Requests.ToArray(), parser);
             }
         }
 
         [Test]
-        public void RequestsSingle()
+        public async Task RequestsSingle()
         {
             foreach (var request in TestRequest.Requests/*.Where(r => r.Name == "1.0 post")*/)
             {
-                ThreeChunkScan(new TestRequest[] { request });
+                await ThreeChunkScan(new TestRequest[] { request });
             }
         }
 
         [Test]
-        public void RequestsWithDigits() {
+        public async Task RequestsWithDigits() {
             foreach (var request in TestRequest.Requests.Where(r => r.Name.StartsWith("digits in "))) {
                 var handler = new Handler();
                 var parser = new HttpParser(handler);
                 Console.WriteLine("----- Testing request: '" + request.Name + "' -----");
 
-                var parsed = parser.Execute(new ArraySegment<byte>(request.Raw));
+                var parsed = await parser.Execute(new ArraySegment<byte>(request.Raw));
 
                 if (parsed != request.Raw.Length)
                     Assert.Fail("Error while parsing.");
@@ -268,63 +269,63 @@ namespace HttpMachine.Tests
         public class OneOhTests
         {
             [Test]
-            public void PostKeepAlivePostEof()
+            public async Task PostKeepAlivePostEof()
             {
-                PipelineAndScan("1.0 post keep-alive with content length", "1.0 post");
+                await PipelineAndScan("1.0 post keep-alive with content length", "1.0 post");
             }
 
             [Test]
-            public void GetKeepAlivePostEof()
+			public async Task GetKeepAlivePostEof()
             {
-                PipelineAndScan("1.0 get keep-alive", "1.0 post");
+                await PipelineAndScan("1.0 get keep-alive", "1.0 post");
             }
 
             [Test]
-            public void PostEof()
+			public async Task PostEof()
             {
-                PipelineAndScan("1.0 post");
+                await PipelineAndScan("1.0 post");
             }
 
             [Test]
-            public void PostNoContentLength()
+			public async Task PostNoContentLength()
             {
-                PipelineAndScan("1.0 post no content length");
+                await PipelineAndScan("1.0 post no content length");
             }
 
 			[Test]
-            public void Get()
+			public async Task Get()
             {
-                PipelineAndScan("1.0 get");
+                await PipelineAndScan("1.0 get");
             }
 
             [Test]
-            public void GetKeepAlive()
+			public async Task GetKeepAlive()
             {
-                PipelineAndScan("1.0 get keep-alive");
+                await PipelineAndScan("1.0 get keep-alive");
             }
 
             [Test]
-            public void PostKeepAliveGet()
+			public async Task PostKeepAliveGet()
             {
-                PipelineAndScan("1.0 post keep-alive with content length", "1.0 get");
+                await PipelineAndScan("1.0 post keep-alive with content length", "1.0 get");
             }
 
             [Test]
-            public void GetKeepAliveGet()
+			public async Task GetKeepAliveGet()
             {
-                PipelineAndScan("1.0 get keep-alive", "1.0 get keep-alive", "1.0 get");
+                await PipelineAndScan("1.0 get keep-alive", "1.0 get keep-alive", "1.0 get");
             }
 
             [Test]
-            public void OneOhPostKeepAlivePost()
+			public async Task OneOhPostKeepAlivePost()
             {
-                PipelineAndScan("1.0 post keep-alive with content length", "1.0 post");
+                await PipelineAndScan("1.0 post keep-alive with content length", "1.0 post");
             }
 
             [Test]
-            public void GetKeepAlivePost()
+			public async Task GetKeepAlivePost()
             {
-                PipelineAndScan("1.0 get keep-alive", "1.0 post");
+                await PipelineAndScan("1.0 get keep-alive", "1.0 post");
             }
         }
 
@@ -332,75 +333,75 @@ namespace HttpMachine.Tests
         public class OneOneTests
         {
             [Test]
-            public void Get()
+			public async Task Get()
             {
-                PipelineAndScan("1.1 get");
+                await PipelineAndScan("1.1 get");
             }
 
             [Test]
-            public void GetGet()
+			public async Task GetGet()
             {
-                PipelineAndScan("1.1 get", "1.1 get");
+                await PipelineAndScan("1.1 get", "1.1 get");
             }
 
             [Test]
-            public void GetGetGetClose()
+			public async Task GetGetGetClose()
             {
-                PipelineAndScan("1.1 get", "1.1 get", "1.1 get close");
+                await PipelineAndScan("1.1 get", "1.1 get", "1.1 get close");
             }
 
             [Test]
-            public void Post()
+			public async Task Post()
             {
-                PipelineAndScan("1.1 post");
+                await PipelineAndScan("1.1 post");
             }
 
             [Test]
-            public void PostPost()
+			public async Task PostPost()
             {
-                PipelineAndScan("1.1 post", "1.1 post");
+                await PipelineAndScan("1.1 post", "1.1 post");
             }
 
             [Test]
-            public void PostPostPostClose()
+			public async Task PostPostPostClose()
             {
-                PipelineAndScan("1.1 post", "1.1 post", "1.1 post close");
+                await PipelineAndScan("1.1 post", "1.1 post", "1.1 post close");
             }
 
             [Test]
-            public void GetClose()
+			public async Task GetClose()
             {
-                PipelineAndScan("1.1 get close");
+                await PipelineAndScan("1.1 get close");
             }
 
             [Test]
-            public void PostClose()
+			public async Task PostClose()
             {
-                PipelineAndScan("1.1 post close");
+                await PipelineAndScan("1.1 post close");
             }
 
             [Test]
-            public void GetPost()
+			public async Task GetPost()
             {
-                PipelineAndScan("1.1 get", "1.1 post");
+                await PipelineAndScan("1.1 get", "1.1 post");
             }
 
             [Test]
-            public void GetPostClose()
+			public async Task GetPostClose()
             {
-                PipelineAndScan("1.1 get", "1.1 post close");
+                await PipelineAndScan("1.1 get", "1.1 post close");
             }
 
             [Test]
-            public void GetPostGetClose()
+			public async Task GetPostGetClose()
             {
-                PipelineAndScan("1.1 get", "1.1 post", "1.1 get close");
+                await PipelineAndScan("1.1 get", "1.1 post", "1.1 get close");
             }
         }
 
-        static void PipelineAndScan(params string[] requests)
+        static async Task PipelineAndScan(params string[] requests)
         {
-            ThreeChunkScan(MakePipelined(requests));
+            await ThreeChunkScan(MakePipelined(requests));
         }
 
         static IEnumerable<TestRequest> MakePipelined(string[] requestNames)
@@ -411,7 +412,7 @@ namespace HttpMachine.Tests
             return result;
         }
 
-        static void ThreeChunkScan(IEnumerable<TestRequest> requests)
+        static async Task ThreeChunkScan(IEnumerable<TestRequest> requests)
         {
             // read each sequence of requests as three blocks, with the breaks in every possible combination.
 
@@ -462,13 +463,13 @@ namespace HttpMachine.Tests
                         Buffer.BlockCopy(raw, j, buffer3, 0, buffer3Length);
 
                         //Console.WriteLine("Parsing buffer 1.");
-                        Assert.AreEqual(buffer1Length, parser.Execute(new ArraySegment<byte>(buffer1, 0, buffer1Length)), "Error parsing buffer 1.");
+                        Assert.AreEqual(buffer1Length, await parser.Execute(new ArraySegment<byte>(buffer1, 0, buffer1Length)), "Error parsing buffer 1.");
 
                         //Console.WriteLine("Parsing buffer 2.");
-                        Assert.AreEqual(buffer2Length, parser.Execute(new ArraySegment<byte>(buffer2, 0, buffer2Length)), "Error parsing buffer 2.");
+						Assert.AreEqual(buffer2Length, await parser.Execute(new ArraySegment<byte>(buffer2, 0, buffer2Length)), "Error parsing buffer 2.");
 
                         //Console.WriteLine("Parsing buffer 3.");
-                        Assert.AreEqual(buffer3Length, parser.Execute(new ArraySegment<byte>(buffer3, 0, buffer3Length)), "Error parsing buffer 3.");
+						Assert.AreEqual(buffer3Length, await parser.Execute(new ArraySegment<byte>(buffer3, 0, buffer3Length)), "Error parsing buffer 3.");
                         
                         AssertRequest(requests.ToArray(), handler.Requests.ToArray(), parser);
                     }

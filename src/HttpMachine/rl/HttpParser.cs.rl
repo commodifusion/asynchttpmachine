@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HttpMachine
 {
@@ -85,7 +86,7 @@ namespace HttpMachine
 			gotConnectionKeepAlive = false;
 			gotTransferEncodingChunked = false;
 			gotUpgradeValue = false;
-			del.OnMessageBegin(this);
+			await del.OnMessageBegin(this);
 		}
         
         action matched_absolute_uri {
@@ -120,21 +121,21 @@ namespace HttpMachine
 		}
 
 		action on_method {
-			del.OnMethod(this, sb.ToString());
+			await del.OnMethod(this, sb.ToString());
 		}
         
 		action on_request_uri {
-			del.OnRequestUri(this, sb.ToString());
+			await del.OnRequestUri(this, sb.ToString());
 		}
 
 		action on_abs_path
 		{
-			del.OnPath(this, sb2.ToString());
+			await del.OnPath(this, sb2.ToString());
 		}
         
 		action on_query_string
 		{
-			del.OnQueryString(this, sb2.ToString());
+			await del.OnQueryString(this, sb2.ToString());
 		}
 
         action enter_query_string {
@@ -144,12 +145,12 @@ namespace HttpMachine
 
         action leave_query_string {
             //Console.WriteLine("leave_query_string fpc " + fpc + " qsMark " + qsMark);
-            del.OnQueryString(this, new ArraySegment<byte>(data, qsMark, fpc - qsMark));
+            await del.OnQueryString(this, new ArraySegment<byte>(data, qsMark, fpc - qsMark));
         }
 
 		action on_fragment
 		{
-			del.OnFragment(this, sb2.ToString());
+			await del.OnFragment(this, sb2.ToString());
 		}
 
         action enter_fragment {
@@ -159,7 +160,7 @@ namespace HttpMachine
 
         action leave_fragment {
             //Console.WriteLine("leave_fragment fpc " + fpc + " fragMark " + fragMark);
-            del.OnFragment(this, new ArraySegment<byte>(data, fragMark, fpc - fragMark));
+            await del.OnFragment(this, new ArraySegment<byte>(data, fragMark, fpc - fragMark));
         }
 
         action version_major {
@@ -209,7 +210,7 @@ namespace HttpMachine
 		}
 
 		action on_header_name {
-			del.OnHeaderName(this, sb.ToString());
+			await del.OnHeaderName(this, sb.ToString());
 		}
 
 		action on_header_value {
@@ -221,7 +222,7 @@ namespace HttpMachine
 
 			inConnectionHeader = inTransferEncodingHeader = inContentLengthHeader = false;
 			
-			del.OnHeaderValue(this, str);
+			await del.OnHeaderValue(this, str);
 		}
 
         action last_crlf {
@@ -229,7 +230,7 @@ namespace HttpMachine
 			if (fc == 10)
 			{
 				//Console.WriteLine("leave_headers contentLength = " + contentLength);
-				del.OnHeadersEnd(this);
+				await del.OnHeadersEnd(this);
 
 				// if chunked transfer, ignore content length and parse chunked (but we can't yet so bail)
 				// if content length given but zero, read next request
@@ -242,7 +243,7 @@ namespace HttpMachine
 
 				if (contentLength == 0)
 				{
-					del.OnMessageEnd(this);
+					await del.OnMessageEnd(this);
 					//fhold;
 					fgoto main;
 				}
@@ -256,7 +257,7 @@ namespace HttpMachine
 					//Console.WriteLine("Request had no content length.");
 					if (ShouldKeepAlive)
 					{
-						del.OnMessageEnd(this);
+						await del.OnMessageEnd(this);
 						//Console.WriteLine("Should keep alive, will read next message.");
 						//fhold;
 						fgoto main;
@@ -269,7 +270,7 @@ namespace HttpMachine
 							fgoto body_identity_eof;
 						}
 		
-						del.OnMessageEnd(this);
+						await del.OnMessageEnd(this);
 						//fhold;
 						fgoto main;
 					}
@@ -282,14 +283,14 @@ namespace HttpMachine
 			//Console.WriteLine("body_identity: reading " + toRead + " bytes from body.");
 			if (toRead > 0)
 			{
-				del.OnBody(this, new ArraySegment<byte>(data, p, toRead));
+				await del.OnBody(this, new ArraySegment<byte>(data, p, toRead));
 				p += toRead - 1;
 				contentLength -= toRead;
 				//Console.WriteLine("content length is now " + contentLength);
 
 				if (contentLength == 0)
 				{
-					del.OnMessageEnd(this);
+					await del.OnMessageEnd(this);
 
 					if (ShouldKeepAlive)
 					{
@@ -315,13 +316,13 @@ namespace HttpMachine
 			//Console.WriteLine("body_identity_eof: reading " + toRead + " bytes from body.");
 			if (toRead > 0)
 			{
-				del.OnBody(this, new ArraySegment<byte>(data, p, toRead));
+				await del.OnBody(this, new ArraySegment<byte>(data, p, toRead));
 				p += toRead - 1;
 				fbreak;
 			}
 			else
 			{
-				del.OnMessageEnd(this);
+				await del.OnMessageEnd(this);
 				
 				if (ShouldKeepAlive)
 					fgoto main;
@@ -351,7 +352,7 @@ namespace HttpMachine
             %% write init;
         }
 
-        public int Execute(ArraySegment<byte> buf)
+        public async Task<int> Execute(ArraySegment<byte> buf)
         {
             byte[] data = buf.Array;
             int p = buf.Offset;

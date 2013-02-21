@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace HttpMachine
 {
     public interface IHttpParserDelegate
     {
-        void OnMessageBegin(HttpParser parser);
-        void OnMethod(HttpParser parser, string method);
-        void OnRequestUri(HttpParser parser, string requestUri);
-        void OnPath(HttpParser parser, string path);
-        void OnFragment(HttpParser parser, string fragment);
-        void OnQueryString(HttpParser parser, string queryString);
-        void OnHeaderName(HttpParser parser, string name);
-        void OnHeaderValue(HttpParser parser, string value);
-        void OnHeadersEnd(HttpParser parser);
-        void OnBody(HttpParser parser, ArraySegment<byte> data);
-        void OnMessageEnd(HttpParser parser);
+        Task OnMessageBegin(HttpParser parser);
+        Task OnMethod(HttpParser parser, string method);
+        Task OnRequestUri(HttpParser parser, string requestUri);
+        Task OnPath(HttpParser parser, string path);
+        Task OnFragment(HttpParser parser, string fragment);
+        Task OnQueryString(HttpParser parser, string queryString);
+        Task OnHeaderName(HttpParser parser, string name);
+        Task OnHeaderValue(HttpParser parser, string value);
+        Task OnHeadersEnd(HttpParser parser);
+        Task OnBody(HttpParser parser, ArraySegment<byte> data);
+        Task OnMessageEnd(HttpParser parser);
     }
 }
