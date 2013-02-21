@@ -1,6 +1,6 @@
 # AsyncHttpMachine
 
-AsyncHttpMachine is adapted from [Benjamin van der Veen](http://bvanderveen.com/)'s HttpMachine C# HTTP request parser. It implements an asynchronous state machine with [Adrian Thurston](http://www.complang.org/thurston/)'s excellent state machine compiler, [Ragel](http://www.complang.org/ragel/), using C#'s `Task`, `async` and `await` features. Because Ragel supports C, D, Java, Ruby, it wouldn't be hard to port this library to those languages.
+AsyncHttpMachine is adapted from [Benjamin van der Veen](http://bvanderveen.com/)'s [HttpMachine](https://github.com/bvanderveen/httpmachine) C# HTTP request parser. It implements an asynchronous state machine with [Adrian Thurston](http://www.complang.org/thurston/)'s excellent state machine compiler, [Ragel](http://www.complang.org/ragel/), using C#'s `Task`, `async` and `await` features. Because Ragel supports C, D, Java, Ruby, it wouldn't be hard to port this library to those languages.
 
 HttpMachine is Copyright (c) 2011 [Benjamin van der Veen](http://bvanderveen.com). HttpMachine is licensed under the 
 MIT License. See LICENSE.txt. No copyright is claimed on the minor adaptations to asynchronous use made by CommodiFusion Ltd.
