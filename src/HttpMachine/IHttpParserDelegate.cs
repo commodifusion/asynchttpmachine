@@ -16,5 +16,6 @@ namespace HttpMachine
         Task OnHeadersEnd(HttpParser parser);
         Task OnBody(HttpParser parser, ArraySegment<byte> data);
         Task OnMessageEnd(HttpParser parser);
+		Task OnError(HttpParser parser, int position, byte data);
     }
 }

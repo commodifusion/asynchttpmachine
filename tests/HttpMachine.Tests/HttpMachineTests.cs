@@ -169,6 +169,13 @@ namespace HttpMachine.Tests
             //Console.WriteLine("OnBody:  '" + str + "'");
             body.Add(data);
         }
+
+		public async Task OnError(HttpParser parser, int position, byte data)
+		{
+			Console.WriteLine("error on character " + position);
+			Console.WriteLine("('" + data + "')");
+			Console.WriteLine("('" + ((char)data) + "')");
+		}
     }
 
     public class HttpParserTests
